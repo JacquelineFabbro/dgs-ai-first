@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>NovaTech Assistant — Painel de Readiness do Go-Live</title>
+<style>
+  :root{
+    --ink:#0F1B2D;
+    --slate:#3E4C5E;
+    --mist:#EEF1F5;
+    --paper:#F7F8FA;
+    --line:#DCE1E8;
+    --teal:#0B6E7C;
+    --teal-deep:#074954;
+    --red:#B3261E;
+    --red-bg:#FBE7E5;
+    --amber:#93600A;
+    --amber-bg:#FDF0D5;
+    --green:#1E6B3C;
+    --green-bg:#E3F3E7;
+    --mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+    --sans: "Inter", "Segoe UI", -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; padding:0;
+    background:var(--paper);
+    font-family:var(--sans);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px; margin:0 auto; padding:28px 24px 80px;}
+
+  /* ---- header ---- */
+  header.top{
+    display:flex; justify-content:space-between; align-items:flex-start;
+    border-bottom:2px solid var(--ink); padding-bottom:18px; margin-bottom:20px; gap:24px;
+  }
+  .eyebrow{
+    font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--teal-deep); margin:0 0 6px;
+  }
+  h1{font-size:26px; margin:0 0 4px; letter-spacing:-.01em;}
+  .sub{color:var(--slate); font-size:13.5px; margin:0;}
+  .countdown{
+    text-align:right; font-family:var(--mono); flex-shrink:0;
+  }
+  .countdown .n{font-size:34px; font-weight:700; color:var(--teal-deep); line-height:1;}
+  .countdown .l{font-size:11px; color:var(--slate); text-transform:uppercase; letter-spacing:.08em;}
+
+  /* ---- summary strip ---- */
+  .summary{
+    display:grid; grid-template-columns:repeat(5,1fr); gap:1px;
+    background:var(--line); border:1px solid var(--line); margin-bottom:22px;
+  }
+  .stat{background:#fff; padding:14px 16px;}
+  .stat .num{font-family:var(--mono); font-size:26px; font-weight:700; color:var(--ink);}
+  .stat .lab{font-size:11.5px; color:var(--slate); margin-top:2px;}
+  .stat.st-green .num{color:var(--green);}
+  .stat.st-amber .num{color:var(--amber);}
+  .stat.st-red .num{color:var(--red);}
+
+  /* ---- overall gauge ---- */
+  .gauge-row{display:flex; align-items:center; gap:14px; margin-bottom:26px;}
+  .gauge-label{font-size:12px; color:var(--slate); white-space:nowrap; font-family:var(--mono);}
+  .gauge{flex:1; height:10px; background:var(--mist); border:1px solid var(--line); position:relative; overflow:hidden;}
+  .gauge-fill{height:100%; background:linear-gradient(90deg,var(--teal-deep),var(--teal)); transition:width .3s ease;}
+  .gauge-pct{font-family:var(--mono); font-weight:700; font-size:13px; color:var(--teal-deep); min-width:42px; text-align:right;}
+
+  /* ---- filter bar ---- */
+  .filters{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:18px;}
+  .tabs{display:flex; gap:6px; flex-wrap:wrap;}
+  .tab{
+    font-family:var(--mono); font-size:11.5px; padding:6px 12px; border:1px solid var(--line);
+    background:#fff; cursor:pointer; color:var(--slate); letter-spacing:.02em;
+  }
+  .tab:hover{border-color:var(--teal);}
+  .tab.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .legend{display:flex; gap:14px; font-size:11.5px; color:var(--slate); align-items:center;}
+  .legend .dot{width:9px; height:9px; display:inline-block; border-radius:50%; margin-right:5px; vertical-align:middle;}
+
+  /* ---- layer section ---- */
+  .layer{margin-bottom:26px; border:1px solid var(--line); background:#fff;}
+  .layer-head{
+    display:flex; justify-content:space-between; align-items:center; gap:16px;
+    padding:12px 16px; background:var(--ink); color:#fff;
+  }
+  .layer-head .name{font-size:14.5px; font-weight:600;}
+  .layer-head .name .num{font-family:var(--mono); color:#8FD4DE; margin-right:8px;}
+  .layer-progress{display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:11.5px;}
+  .layer-bar{width:120px; height:6px; background:rgba(255,255,255,.18); position:relative;}
+  .layer-bar-fill{height:100%; background:#8FD4DE;}
+
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  thead th{
+    text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--slate); padding:8px 14px; border-bottom:1px solid var(--line); background:var(--mist);
+  }
+  tbody td{padding:10px 14px; border-bottom:1px solid var(--line); vertical-align:top;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:#FAFCFD;}
+  td.crit{max-width:320px; line-height:1.4;}
+  .class-pill{
+    font-family:var(--mono); font-size:10.5px; font-weight:700; padding:3px 8px;
+    display:inline-block; white-space:nowrap; letter-spacing:.02em;
+  }
+  .class-block{background:var(--red-bg); color:var(--red);}
+  .class-desej{background:var(--mist); color:var(--slate);}
+
+  .status-btn{
+    font-family:var(--mono); font-size:11px; font-weight:700; border:none; cursor:pointer;
+    padding:5px 10px 5px 22px; border-radius:3px; position:relative; white-space:nowrap;
+    transition:background .15s;
+  }
+  .status-btn::before{
+    content:""; position:absolute; left:9px; top:50%; transform:translateY(-50%);
+    width:8px; height:8px; border-radius:50%;
+  }
+  .status-red{background:var(--red-bg); color:var(--red);}
+  .status-red::before{background:var(--red);}
+  .status-amber{background:var(--amber-bg); color:var(--amber);}
+  .status-amber::before{background:var(--amber);}
+  .status-green{background:var(--green-bg); color:var(--green);}
+  .status-green::before{background:var(--green);}
+  .status-btn:hover{filter:brightness(0.96);}
+
+  input.resp, input.date-inp{
+    font-family:var(--sans); font-size:12.5px; border:1px solid transparent; background:transparent;
+    padding:4px 6px; width:100%; color:var(--ink); border-radius:3px;
+  }
+  input.date-inp{font-family:var(--mono); font-size:12px;}
+  input.resp:hover, input.date-inp:hover{border-color:var(--line); background:#fff;}
+  input.resp:focus, input.date-inp:focus{outline:none; border-color:var(--teal); background:#fff;}
+
+  .hitl-tag{
+    display:inline-block; font-family:var(--mono); font-size:9.5px; padding:2px 6px; margin-top:5px;
+    background:#E6F3F5; color:var(--teal-deep); letter-spacing:.03em;
+  }
+
+  footer{margin-top:10px; font-size:11.5px; color:var(--slate); line-height:1.6; border-top:1px solid var(--line); padding-top:14px;}
+  footer b{color:var(--ink);}
+
+  @media (max-width:760px){
+    .summary{grid-template-columns:repeat(2,1fr);}
+    header.top{flex-direction:column;}
+    .countdown{text-align:left;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <p class="eyebrow">NovaTech Assistant · Harness de 5 Camadas</p>
+      <h1>Painel de Readiness do Go-Live</h1>
+      <p class="sub">Status vivo por critério — clique no indicador para atualizar e edite a data-alvo diretamente na tabela.</p>
+    </div>
+    <div class="countdown">
+      <div class="n" id="countdownNum">—</div>
+      <div class="l" id="countdownLabel">dias até a demo</div>
+    </div>
+  </header>
+
+  <div class="summary" id="summaryStrip"></div>
+
+  <div class="gauge-row">
+    <span class="gauge-label">READINESS (bloqueantes)</span>
+    <div class="gauge"><div class="gauge-fill" id="gaugeFill" style="width:0%"></div></div>
+    <span class="gauge-pct" id="gaugePct">0%</span>
+  </div>
+
+  <div class="filters">
+    <div class="tabs" id="tabs"></div>
+    <div class="legend">
+      <span><span class="dot" style="background:var(--red)"></span>Não iniciado / bloqueado</span>
+      <span><span class="dot" style="background:var(--amber)"></span>Em andamento</span>
+      <span><span class="dot" style="background:var(--green)"></span>Pronto</span>
+    </div>
+  </div>
+
+  <div id="layers"></div>
+
+  <footer>
+    <b>Como usar:</b> clique no indicador de status para alternar entre vermelho → amarelo → verde. O campo de data-alvo é editável diretamente. As alterações ficam apenas nesta sessão do navegador — para registrar oficialmente o status antes da reunião de gate, exporte ou copie os valores finais.
+    <br><b>Leitura do gauge:</b> considera apenas os critérios <b>bloqueantes</b> — é o número que importa para a decisão de ir ou não ao ar. Critérios desejáveis entram no resumo geral, mas não no cálculo de readiness.
+    <br>Datas-alvo abaixo são sugestões iniciais de trabalho — ajuste para os prazos reais da sua equipe. A coluna de responsável foi removida por ora, já que as alocações do time ainda não estão definidas.
+  </footer>
+
+</div>
+
+<script>
+const TARGET_DATE = new Date("2026-07-20T09:00:00");
+
+const DATA = [
+  { layer:"1. Tool Orchestration", items:[
+    { c:"Toda resposta passa por retrieval antes de completion", classe:"bloq", status:"green", resp:"Dev Sênior (RAG)", date:"2026-07-07" },
+    { c:"Fallback \"não encontrado\" quando não há chunk relevante", classe:"bloq", status:"red", resp:"Dev Backend", date:"2026-07-10" },
+    { c:"Resolução automática da versão da PROC-042 por data do chamado", classe:"bloq", status:"red", resp:"Dev Sênior", date:"2026-07-09" },
+    { c:"Priorização de POL/PROC/SLA sobre FAQ-Atendimento em empate", classe:"bloq", status:"red", resp:"Dev Backend", date:"2026-07-10" },
+    { c:"Decomposição automática de perguntas multi-domínio", classe:"desej", status:"amber", resp:"Backlog pós-piloto", date:"—" },
+  ]},
+  { layer:"2. Verification Loops", items:[
+    { c:"Structured output obrigatório (answer, source_document, source_version, confidence_score, citations[])", classe:"bloq", status:"red", resp:"Tech Lead", date:"2026-07-09" },
+    { c:"Flag automático de mistura de chunks PROC-042 v1 + v2", classe:"bloq", status:"red", resp:"Dev Backend", date:"2026-07-10" },
+    { c:"Checagem de confidence_score em tema sensível → gatilho de HITL", classe:"bloq", status:"red", resp:"Dev Backend", date:"2026-07-11" },
+    { c:"Golden queries como checklist manual pré-demo (meta ≥90%)", classe:"bloq", status:"amber", resp:"QA / Automação", date:"2026-07-13" },
+    { c:"Flag de resposta sourced apenas em FAQ para carga perigosa", classe:"bloq", status:"red", resp:"Dev Backend", date:"2026-07-11" },
+    { c:"Flag estendido a outros temas (carga danificada, seguro, desconto)", classe:"desej", status:"amber", resp:"Backlog pós-piloto", date:"—" },
+  ]},
+  { layer:"3. Context & Memory", items:[
+    { c:"Dados sensíveis do atendente/cliente não persistem em memória/cache", classe:"bloq", status:"red", resp:"Dev Sênior", date:"2026-07-09" },
+    { c:"Registro de IDs de chunk e versão do documento para auditoria", classe:"bloq", status:"amber", resp:"Dev Backend", date:"2026-07-12" },
+    { c:"Consistência da versão da PROC-042 dentro da mesma sessão", classe:"desej", status:"amber", resp:"Dev Backend", date:"2026-07-16" },
+    { c:"Memória cross-sessão do tier do cliente", classe:"desej", status:"red", resp:"Backlog pós-piloto", date:"—" },
+  ]},
+  { layer:"4. Guardrails (incl. HITL)", items:[
+    { c:"HITL síncrono — carga perigosa com baixa confiança", classe:"bloq", status:"red", resp:"Product Specialist + Riscos", date:"2026-07-14", hitl:"HITL síncrono" },
+    { c:"HITL assíncrono — auditoria de tier inexistente (\"Platinum\")", classe:"bloq", status:"amber", resp:"Product Specialist", date:"2026-07-15", hitl:"HITL assíncrono" },
+    { c:"HITL assíncrono — auditoria de inversão da regra de devolução", classe:"bloq", status:"amber", resp:"Product Specialist", date:"2026-07-15", hitl:"HITL assíncrono" },
+    { c:"HITL síncrono — escalonamento de segurança (falha de classificação do guardrail)", classe:"bloq", status:"red", resp:"Tech Lead + Riscos", date:"2026-07-16", hitl:"HITL síncrono" },
+    { c:"Guardrails do AGENTS.md validados via CI/lint", classe:"bloq", status:"amber", resp:"Tech Lead", date:"2026-07-12" },
+    { c:"Validação de schema (Zod) obrigatória em endpoints", classe:"bloq", status:"red", resp:"Dev Backend", date:"2026-07-10" },
+    { c:"Sistema nunca afirma tier \"Platinum\" ou SLA fora de Gold/Silver/Standard", classe:"bloq", status:"amber", resp:"Product Specialist", date:"2026-07-11" },
+    { c:"Sistema nunca inverte a regra de devolução de carga perigosa", classe:"bloq", status:"amber", resp:"Product Specialist", date:"2026-07-11" },
+    { c:"Fallback \"não encontrei\" para perguntas fora de cobertura", classe:"bloq", status:"red", resp:"Dev Backend", date:"2026-07-10" },
+    { c:"Sugestão automática de encaminhamento (ramal 4500 / sinistros@novatech.com.br)", classe:"desej", status:"red", resp:"Backlog pós-piloto", date:"—" },
+  ]},
+  { layer:"5. Observability", items:[
+    { c:"Log completo por resposta (pergunta, chunks, versão, confidence, HITL, resposta final)", classe:"bloq", status:"red", resp:"DevOps", date:"2026-07-12" },
+    { c:"Dashboard comparando taxa de erro atual vs. baseline de 12%", classe:"bloq", status:"amber", resp:"Gestora + QA", date:"2026-07-15" },
+    { c:"Alerta em tempo real de mistura de chunks v1+v2", classe:"desej", status:"red", resp:"Backlog pós-piloto", date:"—" },
+    { c:"Painel Web completo com séries históricas", classe:"desej", status:"red", resp:"Backlog pós-piloto", date:"—" },
+    { c:"Relatório semanal automático de drift nas golden queries", classe:"desej", status:"red", resp:"Backlog pós-piloto", date:"—" },
+  ]},
+];
+
+const STATUS_ORDER = ["red","amber","green"];
+const STATUS_LABEL = { red:"Não iniciado", amber:"Em andamento", green:"Pronto" };
+
+let activeFilter = "all";
+
+function fmtDate(d){
+  if(d === "—") return "—";
+  const dt = new Date(d + "T00:00:00");
+  return dt.toLocaleDateString("pt-BR", { day:"2-digit", month:"2-digit" });
+}
+
+function renderTabs(){
+  const tabsEl = document.getElementById("tabs");
+  const opts = [["all","TODAS"], ...DATA.map((l,i)=>[String(i), l.layer.split(". ")[1].toUpperCase()])];
+  tabsEl.innerHTML = opts.map(([val,label]) =>
+    `<button class="tab ${activeFilter===val?'active':''}" data-f="${val}">${label}</button>`
+  ).join("");
+  tabsEl.querySelectorAll(".tab").forEach(btn=>{
+    btn.addEventListener("click", ()=>{ activeFilter = btn.dataset.f; renderAll(); });
+  });
+}
+
+function cycleStatus(s){
+  const idx = STATUS_ORDER.indexOf(s);
+  return STATUS_ORDER[(idx+1) % STATUS_ORDER.length];
+}
+
+function renderLayers(){
+  const container = document.getElementById("layers");
+  container.innerHTML = "";
+  DATA.forEach((layer, li) => {
+    if(activeFilter !== "all" && activeFilter !== String(li)) return;
+
+    const bloqItems = layer.items.filter(it=>it.classe==="bloq");
+    const bloqReady = bloqItems.filter(it=>it.status==="green").length;
+    const pct = bloqItems.length ? Math.round((bloqReady/bloqItems.length)*100) : 0;
+
+    const section = document.createElement("div");
+    section.className = "layer";
+    section.innerHTML = `
+      <div class="layer-head">
+        <div class="name"><span class="num">${layer.layer.split(".")[0]}</span>${layer.layer.split(". ")[1]}</div>
+        <div class="layer-progress">
+          <span>${bloqReady}/${bloqItems.length} bloqueantes prontos</span>
+          <div class="layer-bar"><div class="layer-bar-fill" style="width:${pct}%"></div></div>
+          <span>${pct}%</span>
+        </div>
+      </div>
+      <table>
+        <thead><tr>
+          <th style="width:46%">Critério</th>
+          <th style="width:16%">Classificação</th>
+          <th style="width:18%">Status</th>
+          <th style="width:20%">Data-alvo</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    `;
+    const tbody = section.querySelector("tbody");
+    layer.items.forEach((item, ii) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="crit">${item.c}${item.hitl ? `<span class="hitl-tag">${item.hitl}</span>` : ""}</td>
+        <td><span class="class-pill ${item.classe==='bloq'?'class-block':'class-desej'}">${item.classe==='bloq'?'BLOQUEANTE':'DESEJÁVEL'}</span></td>
+        <td><button class="status-btn status-${item.status}" data-li="${li}" data-ii="${ii}">${STATUS_LABEL[item.status]}</button></td>
+        <td><input class="date-inp" type="text" value="${fmtDate(item.date)}" data-li="${li}" data-ii="${ii}"></td>
+      `;
+      tbody.appendChild(tr);
+    });
+    container.appendChild(section);
+  });
+
+  // status click handlers
+  container.querySelectorAll(".status-btn").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const li = +btn.dataset.li, ii = +btn.dataset.ii;
+      const item = DATA[li].items[ii];
+      item.status = cycleStatus(item.status);
+      renderAll();
+    });
+  });
+  container.querySelectorAll("input.date-inp").forEach(inp=>{
+    inp.addEventListener("change", ()=>{
+      const li = +inp.dataset.li, ii = +inp.dataset.ii;
+      DATA[li].items[ii].date = inp.value;
+    });
+  });
+}
+
+function renderSummary(){
+  const all = DATA.flatMap(l=>l.items);
+  const bloq = all.filter(i=>i.classe==="bloq");
+  const counts = { red:0, amber:0, green:0 };
+  bloq.forEach(i=>counts[i.status]++);
+
+  const stats = [
+    { num: all.length, lab: "Critérios totais", cls:"" },
+    { num: bloq.length, lab: "Bloqueantes", cls:"" },
+    { num: counts.red, lab: "Bloqueantes vermelhos", cls:"st-red" },
+    { num: counts.amber, lab: "Bloqueantes em andamento", cls:"st-amber" },
+    { num: counts.green, lab: "Bloqueantes prontos", cls:"st-green" },
+  ];
+  document.getElementById("summaryStrip").innerHTML = stats.map(s=>
+    `<div class="stat ${s.cls}"><div class="num">${s.num}</div><div class="lab">${s.lab}</div></div>`
+  ).join("");
+
+  const pct = bloq.length ? Math.round((counts.green/bloq.length)*100) : 0;
+  document.getElementById("gaugeFill").style.width = pct + "%";
+  document.getElementById("gaugePct").textContent = pct + "%";
+}
+
+function renderCountdown(){
+  const now = new Date();
+  const diffMs = TARGET_DATE - now;
+  const days = Math.ceil(diffMs / (1000*60*60*24));
+  const numEl = document.getElementById("countdownNum");
+  const labEl = document.getElementById("countdownLabel");
+  if(days > 0){
+    numEl.textContent = days;
+    labEl.textContent = "dias até a demo (20/07)";
+  } else if(days === 0){
+    numEl.textContent = "HOJE";
+    labEl.textContent = "dia da demo";
+  } else {
+    numEl.textContent = Math.abs(days);
+    labEl.textContent = "dias após a data prevista";
+  }
+}
+
+function renderAll(){
+  renderTabs();
+  renderSummary();
+  renderLayers();
+}
+
+renderCountdown();
+renderAll();
+</script>
+</body>
+</html>
